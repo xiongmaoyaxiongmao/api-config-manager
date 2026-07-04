@@ -114,28 +114,9 @@ function normalizeSource(source) {
     return CHAT_COMPLETION_SOURCES.CUSTOM;
 }
 
-function looksLikeClaudeModel(model) {
-    return /^claude(?:[-_/]|$)/i.test(String(model || '').trim());
-}
-
-function looksLikeAnthropicUrl(url) {
-    const text = String(url || '').trim().toLowerCase();
-    if (!text) return false;
-
-    return text.includes('api.anthropic.com')
-        || /gateway\.ai\.cloudflare\.com\/v1\/[^/]+\/[^/]+\/anthropic(?:\/|$)/i.test(text)
-        || /\/anthropic(?:\/|$)/i.test(text);
-}
-
 function resolveConfigSource(config) {
     const rawSource = typeof config?.source === 'string' ? config.source : CHAT_COMPLETION_SOURCES.CUSTOM;
-    const normalized = normalizeSource(rawSource);
-    const customUrl = (typeof config?.customUrl === 'string' ? config.customUrl : config?.url) || '';
-    if (normalized === CHAT_COMPLETION_SOURCES.CUSTOM && (looksLikeAnthropicUrl(customUrl) || looksLikeClaudeModel(config?.model))) {
-        return CHAT_COMPLETION_SOURCES.CLAUDE;
-    }
-
-    return normalized;
+    return normalizeSource(rawSource);
 }
 
 function getConfigEndpointForSource(config, source) {
@@ -238,14 +219,6 @@ function initSettings() {
 
         if (!config.source) {
             config.source = CHAT_COMPLETION_SOURCES.CUSTOM;
-        }
-
-        const resolvedSource = resolveConfigSource(config);
-        if (resolvedSource === CHAT_COMPLETION_SOURCES.CLAUDE && config.source === CHAT_COMPLETION_SOURCES.CUSTOM) {
-            config.source = CHAT_COMPLETION_SOURCES.CLAUDE;
-            config.reverseProxy = config.customUrl || config.url || config.reverseProxy;
-            delete config.url;
-            delete config.customUrl;
         }
 
         if (config.source === CHAT_COMPLETION_SOURCES.CUSTOM) {
