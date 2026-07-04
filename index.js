@@ -16,39 +16,262 @@ import { oai_settings } from '../../../../../scripts/openai.js';
 const MODULE_NAME = 'api-config-manager';
 
 const CHAT_COMPLETION_SOURCES = {
+    OPENAI: 'openai',
+    OPENROUTER: 'openrouter',
     CUSTOM: 'custom',
     CLAUDE: 'claude',
+    AI21: 'ai21',
     MAKERSUITE: 'makersuite',
+    VERTEXAI: 'vertexai',
+    MISTRALAI: 'mistralai',
+    COHERE: 'cohere',
+    PERPLEXITY: 'perplexity',
+    GROQ: 'groq',
+    ELECTRONHUB: 'electronhub',
+    CHUTES: 'chutes',
+    NANOGPT: 'nanogpt',
+    DEEPSEEK: 'deepseek',
+    AIMLAPI: 'aimlapi',
+    XAI: 'xai',
+    POLLINATIONS: 'pollinations',
+    MOONSHOT: 'moonshot',
+    FIREWORKS: 'fireworks',
+    COMETAPI: 'cometapi',
+    AZURE_OPENAI: 'azure_openai',
+    ZAI: 'zai',
+    SILICONFLOW: 'siliconflow',
+    WORKERS_AI: 'workers_ai',
+    MINIMAX: 'minimax',
+};
+
+const SOURCE_ORDER = [
+    CHAT_COMPLETION_SOURCES.CUSTOM,
+    CHAT_COMPLETION_SOURCES.OPENAI,
+    CHAT_COMPLETION_SOURCES.CLAUDE,
+    CHAT_COMPLETION_SOURCES.OPENROUTER,
+    CHAT_COMPLETION_SOURCES.AI21,
+    CHAT_COMPLETION_SOURCES.MAKERSUITE,
+    CHAT_COMPLETION_SOURCES.VERTEXAI,
+    CHAT_COMPLETION_SOURCES.MISTRALAI,
+    CHAT_COMPLETION_SOURCES.COHERE,
+    CHAT_COMPLETION_SOURCES.PERPLEXITY,
+    CHAT_COMPLETION_SOURCES.GROQ,
+    CHAT_COMPLETION_SOURCES.ELECTRONHUB,
+    CHAT_COMPLETION_SOURCES.CHUTES,
+    CHAT_COMPLETION_SOURCES.NANOGPT,
+    CHAT_COMPLETION_SOURCES.DEEPSEEK,
+    CHAT_COMPLETION_SOURCES.AIMLAPI,
+    CHAT_COMPLETION_SOURCES.XAI,
+    CHAT_COMPLETION_SOURCES.POLLINATIONS,
+    CHAT_COMPLETION_SOURCES.MOONSHOT,
+    CHAT_COMPLETION_SOURCES.FIREWORKS,
+    CHAT_COMPLETION_SOURCES.COMETAPI,
+    CHAT_COMPLETION_SOURCES.AZURE_OPENAI,
+    CHAT_COMPLETION_SOURCES.ZAI,
+    CHAT_COMPLETION_SOURCES.SILICONFLOW,
+    CHAT_COMPLETION_SOURCES.WORKERS_AI,
+    CHAT_COMPLETION_SOURCES.MINIMAX,
+];
+
+const SOURCE_ALIASES = {
+    anthropic: CHAT_COMPLETION_SOURCES.CLAUDE,
+    'anthropic-claude': CHAT_COMPLETION_SOURCES.CLAUDE,
+    google: CHAT_COMPLETION_SOURCES.MAKERSUITE,
+    ai_studio: CHAT_COMPLETION_SOURCES.MAKERSUITE,
+    aistudio: CHAT_COMPLETION_SOURCES.MAKERSUITE,
+    'google-ai-studio': CHAT_COMPLETION_SOURCES.MAKERSUITE,
+    google_ai_studio: CHAT_COMPLETION_SOURCES.MAKERSUITE,
+    gemini: CHAT_COMPLETION_SOURCES.MAKERSUITE,
+    'azure-openai': CHAT_COMPLETION_SOURCES.AZURE_OPENAI,
+    azure: CHAT_COMPLETION_SOURCES.AZURE_OPENAI,
+    'ai-ml-api': CHAT_COMPLETION_SOURCES.AIMLAPI,
+    aiml: CHAT_COMPLETION_SOURCES.AIMLAPI,
+    'x-ai': CHAT_COMPLETION_SOURCES.XAI,
+    'mistral-ai': CHAT_COMPLETION_SOURCES.MISTRALAI,
+    mistral: CHAT_COMPLETION_SOURCES.MISTRALAI,
+    'electron-hub': CHAT_COMPLETION_SOURCES.ELECTRONHUB,
+    'nano-gpt': CHAT_COMPLETION_SOURCES.NANOGPT,
+    nanogptai: CHAT_COMPLETION_SOURCES.NANOGPT,
+    'workers-ai': CHAT_COMPLETION_SOURCES.WORKERS_AI,
+    cloudflare: CHAT_COMPLETION_SOURCES.WORKERS_AI,
+    'cloudflare-workers-ai': CHAT_COMPLETION_SOURCES.WORKERS_AI,
+    glm: CHAT_COMPLETION_SOURCES.ZAI,
+    z_ai: CHAT_COMPLETION_SOURCES.ZAI,
+    'z-ai': CHAT_COMPLETION_SOURCES.ZAI,
+    'silicon-flow': CHAT_COMPLETION_SOURCES.SILICONFLOW,
+    'mini-max': CHAT_COMPLETION_SOURCES.MINIMAX,
 };
 
 const SOURCE_LABELS = {
     [CHAT_COMPLETION_SOURCES.CUSTOM]: 'Custom (OpenAI兼容)',
+    [CHAT_COMPLETION_SOURCES.OPENAI]: 'OpenAI',
     [CHAT_COMPLETION_SOURCES.CLAUDE]: 'Claude / Anthropic',
+    [CHAT_COMPLETION_SOURCES.OPENROUTER]: 'OpenRouter',
+    [CHAT_COMPLETION_SOURCES.AI21]: 'AI21',
     [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'Google AI Studio',
+    [CHAT_COMPLETION_SOURCES.VERTEXAI]: 'Vertex AI',
+    [CHAT_COMPLETION_SOURCES.MISTRALAI]: 'Mistral AI',
+    [CHAT_COMPLETION_SOURCES.COHERE]: 'Cohere',
+    [CHAT_COMPLETION_SOURCES.PERPLEXITY]: 'Perplexity',
+    [CHAT_COMPLETION_SOURCES.GROQ]: 'Groq',
+    [CHAT_COMPLETION_SOURCES.ELECTRONHUB]: 'ElectronHub',
+    [CHAT_COMPLETION_SOURCES.CHUTES]: 'Chutes',
+    [CHAT_COMPLETION_SOURCES.NANOGPT]: 'NanoGPT',
+    [CHAT_COMPLETION_SOURCES.DEEPSEEK]: 'DeepSeek',
+    [CHAT_COMPLETION_SOURCES.AIMLAPI]: 'AI/ML API',
+    [CHAT_COMPLETION_SOURCES.XAI]: 'xAI',
+    [CHAT_COMPLETION_SOURCES.POLLINATIONS]: 'Pollinations',
+    [CHAT_COMPLETION_SOURCES.MOONSHOT]: 'Moonshot',
+    [CHAT_COMPLETION_SOURCES.FIREWORKS]: 'Fireworks',
+    [CHAT_COMPLETION_SOURCES.COMETAPI]: 'CometAPI',
+    [CHAT_COMPLETION_SOURCES.AZURE_OPENAI]: 'Azure OpenAI',
+    [CHAT_COMPLETION_SOURCES.ZAI]: 'Z.ai',
+    [CHAT_COMPLETION_SOURCES.SILICONFLOW]: 'SiliconFlow',
+    [CHAT_COMPLETION_SOURCES.WORKERS_AI]: 'Cloudflare Workers AI',
+    [CHAT_COMPLETION_SOURCES.MINIMAX]: 'MiniMax',
 };
 
 const SOURCE_MODEL_SELECTORS = {
     [CHAT_COMPLETION_SOURCES.CUSTOM]: '#model_custom_select',
+    [CHAT_COMPLETION_SOURCES.OPENAI]: '#model_openai_select',
     [CHAT_COMPLETION_SOURCES.CLAUDE]: '#model_claude_select',
+    [CHAT_COMPLETION_SOURCES.OPENROUTER]: '#model_openrouter_select',
+    [CHAT_COMPLETION_SOURCES.AI21]: '#model_ai21_select',
     [CHAT_COMPLETION_SOURCES.MAKERSUITE]: '#model_google_select',
+    [CHAT_COMPLETION_SOURCES.VERTEXAI]: '#model_vertexai_select',
+    [CHAT_COMPLETION_SOURCES.MISTRALAI]: '#model_mistralai_select',
+    [CHAT_COMPLETION_SOURCES.COHERE]: '#model_cohere_select',
+    [CHAT_COMPLETION_SOURCES.PERPLEXITY]: '#model_perplexity_select',
+    [CHAT_COMPLETION_SOURCES.GROQ]: '#model_groq_select',
+    [CHAT_COMPLETION_SOURCES.ELECTRONHUB]: '#model_electronhub_select',
+    [CHAT_COMPLETION_SOURCES.CHUTES]: '#model_chutes_select',
+    [CHAT_COMPLETION_SOURCES.NANOGPT]: '#model_nanogpt_select',
+    [CHAT_COMPLETION_SOURCES.DEEPSEEK]: '#model_deepseek_select',
+    [CHAT_COMPLETION_SOURCES.AIMLAPI]: '#model_aimlapi_select',
+    [CHAT_COMPLETION_SOURCES.XAI]: '#model_xai_select',
+    [CHAT_COMPLETION_SOURCES.POLLINATIONS]: '#model_pollinations_select',
+    [CHAT_COMPLETION_SOURCES.MOONSHOT]: '#model_moonshot_select',
+    [CHAT_COMPLETION_SOURCES.FIREWORKS]: '#model_fireworks_select',
+    [CHAT_COMPLETION_SOURCES.COMETAPI]: '#model_cometapi_select',
+    [CHAT_COMPLETION_SOURCES.AZURE_OPENAI]: '#azure_openai_model',
+    [CHAT_COMPLETION_SOURCES.ZAI]: '#model_zai_select',
+    [CHAT_COMPLETION_SOURCES.SILICONFLOW]: '#model_siliconflow_select',
+    [CHAT_COMPLETION_SOURCES.WORKERS_AI]: '#model_workers_ai_select',
+    [CHAT_COMPLETION_SOURCES.MINIMAX]: '#model_minimax_select',
 };
 
 const SOURCE_MODEL_SETTING_KEYS = {
     [CHAT_COMPLETION_SOURCES.CUSTOM]: 'custom_model',
+    [CHAT_COMPLETION_SOURCES.OPENAI]: 'openai_model',
     [CHAT_COMPLETION_SOURCES.CLAUDE]: 'claude_model',
+    [CHAT_COMPLETION_SOURCES.OPENROUTER]: 'openrouter_model',
+    [CHAT_COMPLETION_SOURCES.AI21]: 'ai21_model',
     [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'google_model',
+    [CHAT_COMPLETION_SOURCES.VERTEXAI]: 'vertexai_model',
+    [CHAT_COMPLETION_SOURCES.MISTRALAI]: 'mistralai_model',
+    [CHAT_COMPLETION_SOURCES.COHERE]: 'cohere_model',
+    [CHAT_COMPLETION_SOURCES.PERPLEXITY]: 'perplexity_model',
+    [CHAT_COMPLETION_SOURCES.GROQ]: 'groq_model',
+    [CHAT_COMPLETION_SOURCES.ELECTRONHUB]: 'electronhub_model',
+    [CHAT_COMPLETION_SOURCES.CHUTES]: 'chutes_model',
+    [CHAT_COMPLETION_SOURCES.NANOGPT]: 'nanogpt_model',
+    [CHAT_COMPLETION_SOURCES.DEEPSEEK]: 'deepseek_model',
+    [CHAT_COMPLETION_SOURCES.AIMLAPI]: 'aimlapi_model',
+    [CHAT_COMPLETION_SOURCES.XAI]: 'xai_model',
+    [CHAT_COMPLETION_SOURCES.POLLINATIONS]: 'pollinations_model',
+    [CHAT_COMPLETION_SOURCES.MOONSHOT]: 'moonshot_model',
+    [CHAT_COMPLETION_SOURCES.FIREWORKS]: 'fireworks_model',
+    [CHAT_COMPLETION_SOURCES.COMETAPI]: 'cometapi_model',
+    [CHAT_COMPLETION_SOURCES.AZURE_OPENAI]: 'azure_openai_model',
+    [CHAT_COMPLETION_SOURCES.ZAI]: 'zai_model',
+    [CHAT_COMPLETION_SOURCES.SILICONFLOW]: 'siliconflow_model',
+    [CHAT_COMPLETION_SOURCES.WORKERS_AI]: 'workers_ai_model',
+    [CHAT_COMPLETION_SOURCES.MINIMAX]: 'minimax_model',
 };
 
 const SOURCE_SECRET_KEYS = {
     [CHAT_COMPLETION_SOURCES.CUSTOM]: SECRET_KEYS.CUSTOM,
+    [CHAT_COMPLETION_SOURCES.OPENAI]: SECRET_KEYS.OPENAI,
     [CHAT_COMPLETION_SOURCES.CLAUDE]: SECRET_KEYS.CLAUDE,
+    [CHAT_COMPLETION_SOURCES.OPENROUTER]: SECRET_KEYS.OPENROUTER,
+    [CHAT_COMPLETION_SOURCES.AI21]: SECRET_KEYS.AI21,
     [CHAT_COMPLETION_SOURCES.MAKERSUITE]: SECRET_KEYS.MAKERSUITE,
+    [CHAT_COMPLETION_SOURCES.VERTEXAI]: SECRET_KEYS.VERTEXAI,
+    [CHAT_COMPLETION_SOURCES.MISTRALAI]: SECRET_KEYS.MISTRALAI,
+    [CHAT_COMPLETION_SOURCES.COHERE]: SECRET_KEYS.COHERE,
+    [CHAT_COMPLETION_SOURCES.PERPLEXITY]: SECRET_KEYS.PERPLEXITY,
+    [CHAT_COMPLETION_SOURCES.GROQ]: SECRET_KEYS.GROQ,
+    [CHAT_COMPLETION_SOURCES.ELECTRONHUB]: SECRET_KEYS.ELECTRONHUB,
+    [CHAT_COMPLETION_SOURCES.CHUTES]: SECRET_KEYS.CHUTES,
+    [CHAT_COMPLETION_SOURCES.NANOGPT]: SECRET_KEYS.NANOGPT,
+    [CHAT_COMPLETION_SOURCES.DEEPSEEK]: SECRET_KEYS.DEEPSEEK,
+    [CHAT_COMPLETION_SOURCES.AIMLAPI]: SECRET_KEYS.AIMLAPI,
+    [CHAT_COMPLETION_SOURCES.XAI]: SECRET_KEYS.XAI,
+    [CHAT_COMPLETION_SOURCES.POLLINATIONS]: SECRET_KEYS.POLLINATIONS,
+    [CHAT_COMPLETION_SOURCES.MOONSHOT]: SECRET_KEYS.MOONSHOT,
+    [CHAT_COMPLETION_SOURCES.FIREWORKS]: SECRET_KEYS.FIREWORKS,
+    [CHAT_COMPLETION_SOURCES.COMETAPI]: SECRET_KEYS.COMETAPI,
+    [CHAT_COMPLETION_SOURCES.AZURE_OPENAI]: SECRET_KEYS.AZURE_OPENAI,
+    [CHAT_COMPLETION_SOURCES.ZAI]: SECRET_KEYS.ZAI,
+    [CHAT_COMPLETION_SOURCES.SILICONFLOW]: SECRET_KEYS.SILICONFLOW,
+    [CHAT_COMPLETION_SOURCES.WORKERS_AI]: SECRET_KEYS.WORKERS_AI,
+    [CHAT_COMPLETION_SOURCES.MINIMAX]: SECRET_KEYS.MINIMAX,
 };
+
+const SOURCE_ENDPOINT_FIELDS = {
+    [CHAT_COMPLETION_SOURCES.CUSTOM]: {
+        setting: 'custom_url',
+        selector: '#custom_api_url_text',
+        configKey: 'customUrl',
+        placeholder: 'Custom API URL (例如: https://api.openai.com/v1)',
+        hint: 'Custom：使用OpenAI兼容接口（可用于中转站）。',
+    },
+    [CHAT_COMPLETION_SOURCES.AZURE_OPENAI]: {
+        setting: 'azure_base_url',
+        selector: '#azure_base_url',
+        configKey: 'azureBaseUrl',
+        placeholder: 'Azure Base URL',
+        hint: 'Azure OpenAI：此处保存 Azure Base URL；部署名/API版本仍使用酒馆对应设置。',
+    },
+    [CHAT_COMPLETION_SOURCES.SILICONFLOW]: {
+        setting: 'siliconflow_endpoint',
+        selector: '#siliconflow_endpoint',
+        configKey: 'siliconflowEndpoint',
+        placeholder: 'SiliconFlow endpoint: global 或 cn',
+        hint: 'SiliconFlow：此处保存 endpoint 模式（global/cn），留空使用酒馆当前设置。',
+    },
+    [CHAT_COMPLETION_SOURCES.MINIMAX]: {
+        setting: 'minimax_endpoint',
+        selector: '#minimax_endpoint',
+        configKey: 'minimaxEndpoint',
+        placeholder: 'MiniMax endpoint: global 或 cn',
+        hint: 'MiniMax：此处保存 endpoint 模式（global/cn），留空使用酒馆当前设置。',
+    },
+    [CHAT_COMPLETION_SOURCES.WORKERS_AI]: {
+        setting: 'workers_ai_account_id',
+        selector: '#workers_ai_account_id',
+        configKey: 'workersAiAccountId',
+        placeholder: 'Cloudflare Account ID',
+        hint: 'Cloudflare Workers AI：此处保存 Account ID。',
+    },
+};
+
+const REVERSE_PROXY_SOURCES = new Set([
+    CHAT_COMPLETION_SOURCES.OPENAI,
+    CHAT_COMPLETION_SOURCES.CLAUDE,
+    CHAT_COMPLETION_SOURCES.MAKERSUITE,
+    CHAT_COMPLETION_SOURCES.VERTEXAI,
+    CHAT_COMPLETION_SOURCES.MISTRALAI,
+    CHAT_COMPLETION_SOURCES.DEEPSEEK,
+    CHAT_COMPLETION_SOURCES.XAI,
+    CHAT_COMPLETION_SOURCES.MOONSHOT,
+    CHAT_COMPLETION_SOURCES.ZAI,
+]);
 
 // 扩展信息
 const EXTENSION_INFO = {
     name: 'API配置管理器',
-    version: '1.3.2',
+    version: '1.3.3',
     author: 'Lorenzzz-Elio',
     repository: 'https://github.com/xiongmaoyaxiongmao/api-config-manager'
 };
@@ -109,9 +332,9 @@ async function ensureSecretActive(key, value, label) {
 }
 
 function normalizeSource(source) {
-    if (source === CHAT_COMPLETION_SOURCES.CLAUDE || source === 'anthropic') return CHAT_COMPLETION_SOURCES.CLAUDE;
-    if (source === CHAT_COMPLETION_SOURCES.MAKERSUITE) return CHAT_COMPLETION_SOURCES.MAKERSUITE;
-    return CHAT_COMPLETION_SOURCES.CUSTOM;
+    const normalized = String(source || CHAT_COMPLETION_SOURCES.CUSTOM).trim().toLowerCase();
+    const alias = SOURCE_ALIASES[normalized] || normalized;
+    return SOURCE_ORDER.includes(alias) ? alias : CHAT_COMPLETION_SOURCES.CUSTOM;
 }
 
 function resolveConfigSource(config) {
@@ -120,16 +343,23 @@ function resolveConfigSource(config) {
 }
 
 function getConfigEndpointForSource(config, source) {
-    if (source === CHAT_COMPLETION_SOURCES.CUSTOM) {
-        return (typeof config?.customUrl === 'string' ? config.customUrl : config?.url) || '';
+    const normalized = normalizeSource(source);
+    const endpointField = SOURCE_ENDPOINT_FIELDS[normalized];
+
+    if (endpointField) {
+        return config?.[endpointField.configKey] || config?.[endpointField.setting] || config?.endpoint || config?.customUrl || config?.url || '';
     }
 
-    return config?.reverseProxy || config?.customUrl || config?.url || '';
+    if (REVERSE_PROXY_SOURCES.has(normalized)) {
+        return config?.reverseProxy || config?.endpoint || config?.customUrl || config?.url || '';
+    }
+
+    return '';
 }
 
 function getSourceLabel(source) {
     const normalized = normalizeSource(source);
-    if (normalized !== source && source) {
+    if (normalized === CHAT_COMPLETION_SOURCES.CUSTOM && source && !['custom', ''].includes(String(source).trim().toLowerCase())) {
         return `Unsupported (${source})`;
     }
     return SOURCE_LABELS[normalized] || SOURCE_LABELS[CHAT_COMPLETION_SOURCES.CUSTOM];
@@ -161,6 +391,28 @@ function setReverseProxyFields(reverseProxy, proxyPassword) {
             oai_settings.proxy_password = proxyPassword ?? '';
         }
     }
+}
+
+function setSourceEndpointField(source, endpoint) {
+    const normalized = normalizeSource(source);
+    const field = SOURCE_ENDPOINT_FIELDS[normalized];
+    if (!field || normalized === CHAT_COMPLETION_SOURCES.CUSTOM) return;
+
+    const value = endpoint ?? '';
+    $(field.selector).val(value).trigger('input');
+    if (typeof oai_settings !== 'undefined') {
+        oai_settings[field.setting] = value;
+    }
+}
+
+function clearReverseProxyFields() {
+    setReverseProxyFields('', '');
+}
+
+function renderSourceOptions() {
+    return SOURCE_ORDER
+        .map(source => `<option value="${source}">${SOURCE_LABELS[source]}</option>`)
+        .join('');
 }
 
 async function setSourceSecretIfProvided(source, configName, value, config) {
@@ -251,15 +503,10 @@ async function applyConfig(config) {
             throw new Error('未找到API连接界面元素，请在OpenAI/Chat Completions设置页使用此扩展');
         }
 
-        const rawSource = typeof config?.source === 'string' ? config.source : CHAT_COMPLETION_SOURCES.CUSTOM;
-        const supportedSources = [CHAT_COMPLETION_SOURCES.CUSTOM, CHAT_COMPLETION_SOURCES.CLAUDE, CHAT_COMPLETION_SOURCES.MAKERSUITE, 'anthropic'];
-        if (rawSource && !supportedSources.includes(rawSource)) {
-            toastr.error(`该配置的来源“${rawSource}”暂不受此扩展支持，请编辑配置并改为Custom/Claude/Google AI Studio`, 'API配置管理器');
-            return;
-        }
-
         const source = resolveConfigSource(config);
         setChatCompletionSource(source);
+
+        clearReverseProxyFields();
 
         if (source === CHAT_COMPLETION_SOURCES.CUSTOM) {
             const customUrl = getConfigEndpointForSource(config, source);
@@ -267,7 +514,9 @@ async function applyConfig(config) {
             if (typeof oai_settings !== 'undefined') {
                 oai_settings.custom_url = customUrl;
             }
-        } else if ([CHAT_COMPLETION_SOURCES.CLAUDE, CHAT_COMPLETION_SOURCES.MAKERSUITE].includes(source)) {
+        } else if (SOURCE_ENDPOINT_FIELDS[source]) {
+            setSourceEndpointField(source, getConfigEndpointForSource(config, source));
+        } else if (REVERSE_PROXY_SOURCES.has(source)) {
             setReverseProxyFields(getConfigEndpointForSource(config, source), config.proxyPassword);
         }
 
@@ -384,6 +633,7 @@ function setPreferredModel(modelName, configName, source) {
 // 获取可用模型列表
 async function fetchAvailableModels() {
     const source = normalizeSource($('#api-config-source').val());
+    const endpointField = SOURCE_ENDPOINT_FIELDS[source];
 
     const customUrl = $('#api-config-url').val().trim();
     const apiKey = $('#api-config-key').val().trim();
@@ -399,18 +649,9 @@ async function fetchAvailableModels() {
     button.text('获取中...').prop('disabled', true);
 
     try {
-        if (source === CHAT_COMPLETION_SOURCES.CUSTOM) {
-            if (apiKey) {
-                await ensureSecretActive(SECRET_KEYS.CUSTOM, apiKey, 'ACM: Fetch models (Custom)');
-            }
-        } else if (source === CHAT_COMPLETION_SOURCES.CLAUDE) {
-            if (!reverseProxy && apiKey) {
-                await ensureSecretActive(SECRET_KEYS.CLAUDE, apiKey, 'ACM: Fetch models (Claude)');
-            }
-        } else if (source === CHAT_COMPLETION_SOURCES.MAKERSUITE) {
-            if (!reverseProxy && apiKey) {
-                await ensureSecretActive(SECRET_KEYS.MAKERSUITE, apiKey, 'ACM: Fetch models (AI Studio)');
-            }
+        const secretKey = SOURCE_SECRET_KEYS[source];
+        if (secretKey && apiKey && !(REVERSE_PROXY_SOURCES.has(source) && reverseProxy)) {
+            await ensureSecretActive(secretKey, apiKey, `ACM: Fetch models (${getSourceLabel(source)})`);
         }
 
         /** @type {any} */
@@ -422,6 +663,8 @@ async function fetchAvailableModels() {
 
         if (source === CHAT_COMPLETION_SOURCES.CUSTOM) {
             requestData.custom_url = customUrl;
+        } else if (endpointField) {
+            requestData[endpointField.setting] = customUrl;
         }
 
         const response = await fetch('/api/backends/chat-completions/status', {
@@ -471,6 +714,7 @@ function saveNewConfig() {
     const name = $('#api-config-name').val().trim();
     const group = $('#api-config-group').val().trim();
     const source = normalizeSource($('#api-config-source').val());
+    const endpointField = SOURCE_ENDPOINT_FIELDS[source];
 
     const customUrl = $('#api-config-url').val().trim();
     const key = $('#api-config-key').val().trim();
@@ -488,19 +732,20 @@ function saveNewConfig() {
             toastr.error('Custom配置请至少输入URL或密钥', 'API配置管理器');
             return;
         }
-    } else if ([CHAT_COMPLETION_SOURCES.CLAUDE, CHAT_COMPLETION_SOURCES.MAKERSUITE].includes(source)) {
+    } else if (REVERSE_PROXY_SOURCES.has(source)) {
         if (!reverseProxy && !key) {
             toastr.info(`未填写反代URL和密钥：将使用酒馆已保存的${getSourceLabel(source)}密钥（如已配置）`, 'API配置管理器');
         }
     }
 
-    const usesReverseProxy = [CHAT_COMPLETION_SOURCES.CLAUDE, CHAT_COMPLETION_SOURCES.MAKERSUITE].includes(source);
+    const usesReverseProxy = REVERSE_PROXY_SOURCES.has(source);
     const config = {
         name: name,
         group: group || undefined,
         source: source,
         url: source === CHAT_COMPLETION_SOURCES.CUSTOM ? customUrl : undefined,
         customUrl: source === CHAT_COMPLETION_SOURCES.CUSTOM ? customUrl : undefined,
+        endpoint: source !== CHAT_COMPLETION_SOURCES.CUSTOM && endpointField ? customUrl || undefined : undefined,
         key: key,
         reverseProxy: usesReverseProxy ? reverseProxy : undefined,
         proxyPassword: usesReverseProxy ? proxyPassword : undefined,
@@ -508,6 +753,11 @@ function saveNewConfig() {
         secretId: undefined,
         secretIds: undefined,
     };
+
+    if (endpointField && source !== CHAT_COMPLETION_SOURCES.CUSTOM) {
+        config[endpointField.configKey] = customUrl || undefined;
+        config[endpointField.setting] = customUrl || undefined;
+    }
 
     if (editingIndex >= 0) {
         // 更新现有配置（编辑模式）
@@ -570,6 +820,7 @@ function saveNewConfig() {
 
 function updateFormBySource(sourceValue) {
     const source = normalizeSource(sourceValue);
+    const endpointField = SOURCE_ENDPOINT_FIELDS[source];
 
     const $customUrl = $('#api-config-url');
     const $apiKey = $('#api-config-key');
@@ -585,20 +836,27 @@ function updateFormBySource(sourceValue) {
         $proxyPassword.hide();
         $fetchModels.prop('disabled', false);
         $hint.text('Custom：使用OpenAI兼容接口（可用于反代OpenAI兼容服务）。');
-    } else if (source === CHAT_COMPLETION_SOURCES.CLAUDE) {
+    } else if (REVERSE_PROXY_SOURCES.has(source)) {
         $customUrl.hide();
-        $apiKey.show().attr('placeholder', 'Claude API Key (可选；反代需要时填写)');
-        $reverseProxy.show().attr('placeholder', 'Claude反代URL（例如 Cloudflare Anthropic 网关）');
+        $apiKey.show().attr('placeholder', `${getSourceLabel(source)} API Key (可选；不填则使用酒馆已保存密钥)`);
+        $reverseProxy.show().attr('placeholder', `${getSourceLabel(source)} 反代URL (可选；留空使用默认)`);
         $proxyPassword.show().attr('placeholder', '反代密码/Token (可选；反代需要时填写)');
         $fetchModels.prop('disabled', false);
-        $hint.text('Claude：使用 Anthropic/Claude source，可填写 Cloudflare Anthropic 网关作为 reverse_proxy。');
-    } else if (source === CHAT_COMPLETION_SOURCES.MAKERSUITE) {
-        $customUrl.hide();
-        $apiKey.show().attr('placeholder', 'Google AI Studio API Key (可选；不填则使用酒馆已保存的密钥)');
-        $reverseProxy.show().attr('placeholder', '反代服务器URL (可选；留空使用默认)');
-        $proxyPassword.show().attr('placeholder', '反代密码/Key (可选；反代需要时填写)');
+        $hint.text(`${getSourceLabel(source)}：按具体 Chat Completion 来源保存，可选 reverse_proxy。`);
+    } else if (endpointField) {
+        $customUrl.show().attr('placeholder', endpointField.placeholder);
+        $apiKey.show().attr('placeholder', `${getSourceLabel(source)} API Key (可选；不填则使用酒馆已保存密钥)`);
+        $reverseProxy.hide();
+        $proxyPassword.hide();
         $fetchModels.prop('disabled', false);
-        $hint.text('Google AI Studio：支持直接Key或使用反代（reverse_proxy + proxy_password）。');
+        $hint.text(endpointField.hint);
+    } else {
+        $customUrl.hide();
+        $apiKey.show().attr('placeholder', `${getSourceLabel(source)} API Key (可选；不填则使用酒馆已保存密钥)`);
+        $reverseProxy.hide();
+        $proxyPassword.hide();
+        $fetchModels.prop('disabled', false);
+        $hint.text(`${getSourceLabel(source)}：按具体 Chat Completion 来源保存 source、key、model。`);
     }
 }
 
@@ -827,14 +1085,15 @@ function editConfig(index) {
     const config = extension_settings[MODULE_NAME].configs[index];
     const source = resolveConfigSource(config);
     const endpoint = getConfigEndpointForSource(config, source);
+    const endpointField = SOURCE_ENDPOINT_FIELDS[source];
 
     // 填充表单
     $('#api-config-name').val(config.name);
     $('#api-config-group').val(config.group || '');
     $('#api-config-source').val(source).trigger('change');
-    $('#api-config-url').val(source === CHAT_COMPLETION_SOURCES.CUSTOM ? endpoint : '');
+    $('#api-config-url').val(source === CHAT_COMPLETION_SOURCES.CUSTOM || endpointField ? endpoint : '');
     $('#api-config-key').val(config.key || '');
-    $('#api-config-reverse-proxy').val(source === CHAT_COMPLETION_SOURCES.CUSTOM ? '' : endpoint);
+    $('#api-config-reverse-proxy').val(REVERSE_PROXY_SOURCES.has(source) ? endpoint : '');
     $('#api-config-proxy-password').val(config.proxyPassword || '');
     $('#api-config-model').val(config.model || '');
 
@@ -904,9 +1163,7 @@ async function createUI() {
                                 <input type="text" id="api-config-name" placeholder="配置名称 (例如: OpenAI GPT-4)" class="text_pole">
                                 <input type="text" id="api-config-group" placeholder="分组名称 (可选，例如: 工作用)" class="text_pole">
                                 <select id="api-config-source" class="text_pole">
-                                    <option value="${CHAT_COMPLETION_SOURCES.CUSTOM}">Custom (OpenAI兼容)</option>
-                                    <option value="${CHAT_COMPLETION_SOURCES.CLAUDE}">Claude / Anthropic</option>
-                                    <option value="${CHAT_COMPLETION_SOURCES.MAKERSUITE}">Google AI Studio</option>
+                                    ${renderSourceOptions()}
                                 </select>
                                 <input type="text" id="api-config-url" placeholder="Custom API URL (例如: https://api.openai.com/v1)" class="text_pole">
                                 <input type="password" id="api-config-key" placeholder="API密钥 (可选)" class="text_pole">
