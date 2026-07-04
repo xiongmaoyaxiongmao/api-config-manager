@@ -50,7 +50,7 @@ const EXTENSION_INFO = {
     name: 'API配置管理器',
     version: '1.3.2',
     author: 'Lorenzzz-Elio',
-    repository: 'https://github.com/Lorenzzz-Elio/api-config-manager'
+    repository: 'https://github.com/xiongmaoyaxiongmao/api-config-manager'
 };
 
 // 默认设置
