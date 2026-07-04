@@ -17,33 +17,38 @@ const MODULE_NAME = 'api-config-manager';
 
 const CHAT_COMPLETION_SOURCES = {
     CUSTOM: 'custom',
+    CLAUDE: 'claude',
     MAKERSUITE: 'makersuite',
 };
 
 const SOURCE_LABELS = {
     [CHAT_COMPLETION_SOURCES.CUSTOM]: 'Custom (OpenAI兼容)',
+    [CHAT_COMPLETION_SOURCES.CLAUDE]: 'Claude / Anthropic',
     [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'Google AI Studio',
 };
 
 const SOURCE_MODEL_SELECTORS = {
     [CHAT_COMPLETION_SOURCES.CUSTOM]: '#model_custom_select',
+    [CHAT_COMPLETION_SOURCES.CLAUDE]: '#model_claude_select',
     [CHAT_COMPLETION_SOURCES.MAKERSUITE]: '#model_google_select',
 };
 
 const SOURCE_MODEL_SETTING_KEYS = {
     [CHAT_COMPLETION_SOURCES.CUSTOM]: 'custom_model',
+    [CHAT_COMPLETION_SOURCES.CLAUDE]: 'claude_model',
     [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'google_model',
 };
 
 const SOURCE_SECRET_KEYS = {
     [CHAT_COMPLETION_SOURCES.CUSTOM]: SECRET_KEYS.CUSTOM,
+    [CHAT_COMPLETION_SOURCES.CLAUDE]: SECRET_KEYS.CLAUDE,
     [CHAT_COMPLETION_SOURCES.MAKERSUITE]: SECRET_KEYS.MAKERSUITE,
 };
 
 // 扩展信息
 const EXTENSION_INFO = {
     name: 'API配置管理器',
-    version: '1.3.1',
+    version: '1.3.2',
     author: 'Lorenzzz-Elio',
     repository: 'https://github.com/Lorenzzz-Elio/api-config-manager'
 };
@@ -104,8 +109,41 @@ async function ensureSecretActive(key, value, label) {
 }
 
 function normalizeSource(source) {
+    if (source === CHAT_COMPLETION_SOURCES.CLAUDE || source === 'anthropic') return CHAT_COMPLETION_SOURCES.CLAUDE;
     if (source === CHAT_COMPLETION_SOURCES.MAKERSUITE) return CHAT_COMPLETION_SOURCES.MAKERSUITE;
     return CHAT_COMPLETION_SOURCES.CUSTOM;
+}
+
+function looksLikeClaudeModel(model) {
+    return /^claude(?:[-_/]|$)/i.test(String(model || '').trim());
+}
+
+function looksLikeAnthropicUrl(url) {
+    const text = String(url || '').trim().toLowerCase();
+    if (!text) return false;
+
+    return text.includes('api.anthropic.com')
+        || /gateway\.ai\.cloudflare\.com\/v1\/[^/]+\/[^/]+\/anthropic(?:\/|$)/i.test(text)
+        || /\/anthropic(?:\/|$)/i.test(text);
+}
+
+function resolveConfigSource(config) {
+    const rawSource = typeof config?.source === 'string' ? config.source : CHAT_COMPLETION_SOURCES.CUSTOM;
+    const normalized = normalizeSource(rawSource);
+    const customUrl = (typeof config?.customUrl === 'string' ? config.customUrl : config?.url) || '';
+    if (normalized === CHAT_COMPLETION_SOURCES.CUSTOM && (looksLikeAnthropicUrl(customUrl) || looksLikeClaudeModel(config?.model))) {
+        return CHAT_COMPLETION_SOURCES.CLAUDE;
+    }
+
+    return normalized;
+}
+
+function getConfigEndpointForSource(config, source) {
+    if (source === CHAT_COMPLETION_SOURCES.CUSTOM) {
+        return (typeof config?.customUrl === 'string' ? config.customUrl : config?.url) || '';
+    }
+
+    return config?.reverseProxy || config?.customUrl || config?.url || '';
 }
 
 function getSourceLabel(source) {
@@ -202,6 +240,14 @@ function initSettings() {
             config.source = CHAT_COMPLETION_SOURCES.CUSTOM;
         }
 
+        const resolvedSource = resolveConfigSource(config);
+        if (resolvedSource === CHAT_COMPLETION_SOURCES.CLAUDE && config.source === CHAT_COMPLETION_SOURCES.CUSTOM) {
+            config.source = CHAT_COMPLETION_SOURCES.CLAUDE;
+            config.reverseProxy = config.customUrl || config.url || config.reverseProxy;
+            delete config.url;
+            delete config.customUrl;
+        }
+
         if (config.source === CHAT_COMPLETION_SOURCES.CUSTOM) {
             if (config.customUrl === undefined && typeof config.url === 'string') {
                 config.customUrl = config.url;
@@ -233,22 +279,23 @@ async function applyConfig(config) {
         }
 
         const rawSource = typeof config?.source === 'string' ? config.source : CHAT_COMPLETION_SOURCES.CUSTOM;
-        if (rawSource && ![CHAT_COMPLETION_SOURCES.CUSTOM, CHAT_COMPLETION_SOURCES.MAKERSUITE].includes(rawSource)) {
-            toastr.error(`该配置的来源“${rawSource}”已不再受此扩展支持，请编辑配置并改为Custom/Google AI Studio`, 'API配置管理器');
+        const supportedSources = [CHAT_COMPLETION_SOURCES.CUSTOM, CHAT_COMPLETION_SOURCES.CLAUDE, CHAT_COMPLETION_SOURCES.MAKERSUITE, 'anthropic'];
+        if (rawSource && !supportedSources.includes(rawSource)) {
+            toastr.error(`该配置的来源“${rawSource}”暂不受此扩展支持，请编辑配置并改为Custom/Claude/Google AI Studio`, 'API配置管理器');
             return;
         }
 
-        const source = normalizeSource(rawSource);
+        const source = resolveConfigSource(config);
         setChatCompletionSource(source);
 
         if (source === CHAT_COMPLETION_SOURCES.CUSTOM) {
-            const customUrl = (typeof config.customUrl === 'string' ? config.customUrl : config.url) || '';
+            const customUrl = getConfigEndpointForSource(config, source);
             $('#custom_api_url_text').val(customUrl).trigger('input');
             if (typeof oai_settings !== 'undefined') {
                 oai_settings.custom_url = customUrl;
             }
-        } else if (source === CHAT_COMPLETION_SOURCES.MAKERSUITE) {
-            setReverseProxyFields(config.reverseProxy, config.proxyPassword);
+        } else if ([CHAT_COMPLETION_SOURCES.CLAUDE, CHAT_COMPLETION_SOURCES.MAKERSUITE].includes(source)) {
+            setReverseProxyFields(getConfigEndpointForSource(config, source), config.proxyPassword);
         }
 
         // 通过secrets系统设置密钥（仅在配置里填写了key时覆盖/激活）
@@ -374,7 +421,6 @@ async function fetchAvailableModels() {
         toastr.error('请先输入Custom API URL', 'API配置管理器');
         return;
     }
-
     const button = $('#api-config-fetch-models');
     const originalText = button.text();
     button.text('获取中...').prop('disabled', true);
@@ -383,6 +429,10 @@ async function fetchAvailableModels() {
         if (source === CHAT_COMPLETION_SOURCES.CUSTOM) {
             if (apiKey) {
                 await ensureSecretActive(SECRET_KEYS.CUSTOM, apiKey, 'ACM: Fetch models (Custom)');
+            }
+        } else if (source === CHAT_COMPLETION_SOURCES.CLAUDE) {
+            if (!reverseProxy && apiKey) {
+                await ensureSecretActive(SECRET_KEYS.CLAUDE, apiKey, 'ACM: Fetch models (Claude)');
             }
         } else if (source === CHAT_COMPLETION_SOURCES.MAKERSUITE) {
             if (!reverseProxy && apiKey) {
@@ -465,12 +515,13 @@ function saveNewConfig() {
             toastr.error('Custom配置请至少输入URL或密钥', 'API配置管理器');
             return;
         }
-    } else if (source === CHAT_COMPLETION_SOURCES.MAKERSUITE) {
+    } else if ([CHAT_COMPLETION_SOURCES.CLAUDE, CHAT_COMPLETION_SOURCES.MAKERSUITE].includes(source)) {
         if (!reverseProxy && !key) {
-            toastr.info('未填写反代URL和密钥：将使用酒馆已保存的Google AI Studio密钥（如已配置）', 'API配置管理器');
+            toastr.info(`未填写反代URL和密钥：将使用酒馆已保存的${getSourceLabel(source)}密钥（如已配置）`, 'API配置管理器');
         }
     }
 
+    const usesReverseProxy = [CHAT_COMPLETION_SOURCES.CLAUDE, CHAT_COMPLETION_SOURCES.MAKERSUITE].includes(source);
     const config = {
         name: name,
         group: group || undefined,
@@ -478,8 +529,8 @@ function saveNewConfig() {
         url: source === CHAT_COMPLETION_SOURCES.CUSTOM ? customUrl : undefined,
         customUrl: source === CHAT_COMPLETION_SOURCES.CUSTOM ? customUrl : undefined,
         key: key,
-        reverseProxy: source === CHAT_COMPLETION_SOURCES.MAKERSUITE ? reverseProxy : undefined,
-        proxyPassword: source === CHAT_COMPLETION_SOURCES.MAKERSUITE ? proxyPassword : undefined,
+        reverseProxy: usesReverseProxy ? reverseProxy : undefined,
+        proxyPassword: usesReverseProxy ? proxyPassword : undefined,
         model: model || undefined, // 只有在有值时才保存model字段
         secretId: undefined,
         secretIds: undefined,
@@ -561,6 +612,13 @@ function updateFormBySource(sourceValue) {
         $proxyPassword.hide();
         $fetchModels.prop('disabled', false);
         $hint.text('Custom：使用OpenAI兼容接口（可用于反代OpenAI兼容服务）。');
+    } else if (source === CHAT_COMPLETION_SOURCES.CLAUDE) {
+        $customUrl.hide();
+        $apiKey.show().attr('placeholder', 'Claude API Key (可选；反代需要时填写)');
+        $reverseProxy.show().attr('placeholder', 'Claude反代URL（例如 Cloudflare Anthropic 网关）');
+        $proxyPassword.show().attr('placeholder', '反代密码/Token (可选；反代需要时填写)');
+        $fetchModels.prop('disabled', false);
+        $hint.text('Claude：使用 Anthropic/Claude source，可填写 Cloudflare Anthropic 网关作为 reverse_proxy。');
     } else if (source === CHAT_COMPLETION_SOURCES.MAKERSUITE) {
         $customUrl.hide();
         $apiKey.show().attr('placeholder', 'Google AI Studio API Key (可选；不填则使用酒馆已保存的密钥)');
@@ -759,7 +817,7 @@ function renderConfigList() {
         const groupContent = $('<div class="api-config-group-content"></div>');
 
         groupItems.forEach(({ config, index }) => {
-            const sourceLabel = getSourceLabel(config.source);
+            const sourceLabel = getSourceLabel(resolveConfigSource(config));
             const configItem = $(`
                 <div class="api-config-item">
                     <div class="api-config-info">
@@ -794,14 +852,16 @@ function renderConfigList() {
 // 编辑配置
 function editConfig(index) {
     const config = extension_settings[MODULE_NAME].configs[index];
+    const source = resolveConfigSource(config);
+    const endpoint = getConfigEndpointForSource(config, source);
 
     // 填充表单
     $('#api-config-name').val(config.name);
     $('#api-config-group').val(config.group || '');
-    $('#api-config-source').val(normalizeSource(config.source)).trigger('change');
-    $('#api-config-url').val((typeof config.customUrl === 'string' ? config.customUrl : config.url) || '');
+    $('#api-config-source').val(source).trigger('change');
+    $('#api-config-url').val(source === CHAT_COMPLETION_SOURCES.CUSTOM ? endpoint : '');
     $('#api-config-key').val(config.key || '');
-    $('#api-config-reverse-proxy').val(config.reverseProxy || '');
+    $('#api-config-reverse-proxy').val(source === CHAT_COMPLETION_SOURCES.CUSTOM ? '' : endpoint);
     $('#api-config-proxy-password').val(config.proxyPassword || '');
     $('#api-config-model').val(config.model || '');
 
@@ -872,6 +932,7 @@ async function createUI() {
                                 <input type="text" id="api-config-group" placeholder="分组名称 (可选，例如: 工作用)" class="text_pole">
                                 <select id="api-config-source" class="text_pole">
                                     <option value="${CHAT_COMPLETION_SOURCES.CUSTOM}">Custom (OpenAI兼容)</option>
+                                    <option value="${CHAT_COMPLETION_SOURCES.CLAUDE}">Claude / Anthropic</option>
                                     <option value="${CHAT_COMPLETION_SOURCES.MAKERSUITE}">Google AI Studio</option>
                                 </select>
                                 <input type="text" id="api-config-url" placeholder="Custom API URL (例如: https://api.openai.com/v1)" class="text_pole">
